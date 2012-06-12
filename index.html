@@ -3,7 +3,7 @@
 <html>
 
 <head>
-	<title>Vis/Edit</title>
+	<title>Vis/Constructor</title>
 	<meta http-equiv="content-type" content="text/html; charset=utf8">
 	<script src="lightgl.js"></script>
 	<script src="csg.js"></script>
@@ -102,20 +102,20 @@
 <body >
 		<div class=treePane><div class=tree id="treeview"></div></div>
 		<div class=menuPane>
-			<a href="javascript:VisEdit.cut()">cut (x)</a>
-			<a href="javascript:VisEdit.copy()">copy (c)</a>
-			<a href="javascript:VisEdit.paste()">paste (v)</a>
+			<a href="javascript:VisConstructor.cut()">cut (x)</a>
+			<a href="javascript:VisConstructor.copy()">copy (c)</a>
+			<a href="javascript:VisConstructor.paste()">paste (v)</a>
 			<br><br>
-			<a href="javascript:VisEdit.wrap('transform')">transform</a>
-			<a href="javascript:VisEdit.wrap('union')">unite</a>
-			<a href="javascript:VisEdit.wrap('subtract')">subtract</a>
-			<a href="javascript:VisEdit.wrap('intersect')">intersect</a>
-			<a href="javascript:VisEdit.wrap('multiply')">multiply</a>
+			<a href="javascript:VisConstructor.wrap('transform')">transform</a>
+			<a href="javascript:VisConstructor.wrap('union')">unite</a>
+			<a href="javascript:VisConstructor.wrap('subtract')">subtract</a>
+			<a href="javascript:VisConstructor.wrap('intersect')">intersect</a>
+			<a href="javascript:VisConstructor.wrap('multiply')">multiply</a>
 			<br><br>
 			add:
-			<a href="javascript:VisEdit.add('cube')">cube</a>
-			<a href="javascript:VisEdit.add('cylinder')">cylinder</a>
-			<a href="javascript:VisEdit.add('sphere')">sphere</a>
+			<a href="javascript:VisConstructor.add('cube')">cube</a>
+			<a href="javascript:VisConstructor.add('cylinder')">cylinder</a>
+			<a href="javascript:VisConstructor.add('sphere')">sphere</a>
 		</div>
 		<div id=view class="view" ></div>
 
@@ -327,10 +327,7 @@ Viewer=function(csg, width, height) {
 }
 
 
-
-
-
-VisEdit=new function(){
+VisConstructor=new function(){
 
 	this.csgCache={};
 	this.selectedPath=null;
@@ -341,7 +338,7 @@ VisEdit=new function(){
 
 	this.getCsg=function(node,path){
 
-		if(!path) path='VisEdit.sceneTree';
+		if(!path) path='VisConstructor.sceneTree';
 	
 		if(!Array.isArray(node))
 			return node;
@@ -422,7 +419,7 @@ VisEdit=new function(){
 	}
 
 	this.getOperatorSelect=function(path,selected){
-		var html='<select id="'+path+'" onchange="VisEdit.changeNodeType(this);">';
+		var html='<select id="'+path+'" onchange="VisConstructor.changeNodeType(this);">';
 		for (var op in this.nodeTemplates)
 			html+='<option value='+op+(op==selected?' selected=selected':'')+'>'+op+'</option>';
 		html+='</select>';
@@ -430,7 +427,7 @@ VisEdit=new function(){
 	}
 
 	this.getEdit=function(path,value){
-		return '<input id="'+path+'" onchange="VisEdit.changeValue(this);" value="'+value+'">';
+		return '<input id="'+path+'" onchange="VisConstructor.changeValue(this);" value="'+value+'">';
 	}
 
 	this.changeNodeType=function(selectElement){
@@ -456,7 +453,7 @@ VisEdit=new function(){
 		var view=document.getElementById('treeview');
 		while(view.firstChild) 
 			view.removeChild(view.firstChild);
-		this.updateNodeView(view, this.sceneTree,'VisEdit.sceneTree');
+		this.updateNodeView(view, this.sceneTree,'VisConstructor.sceneTree');
 	}
 
 	this.updateNodeView=function(parentview, value, path){
@@ -477,16 +474,16 @@ VisEdit=new function(){
 	}
 
 	this.selectHandler=function(e){
-		if(this.id && this.id!=VisEdit.selectedPath){
+		if(this.id && this.id!=VisConstructor.selectedPath){
 
-			if(VisEdit.selectedPath) {
-				var oldSelectedElement=document.getElementById(VisEdit.selectedPath);
+			if(VisConstructor.selectedPath) {
+				var oldSelectedElement=document.getElementById(VisConstructor.selectedPath);
 				if(oldSelectedElement) oldSelectedElement.removeClass('selected');
 			}		
 	
-			VisEdit.selectedPath=this.id;
+			VisConstructor.selectedPath=this.id;
 			this.className+=' selected';
-			VisEdit.update();
+			VisConstructor.update();
 		}
 		e.stopPropagation();
 	}
@@ -753,11 +750,11 @@ VisEdit=new function(){
 	}
 
 	window.addEventListener('keypress', function(e){
-		if(e.charCode=='x'.charCodeAt(0)) VisEdit.cut();
-		if(e.charCode=='c'.charCodeAt(0)) VisEdit.copy();
-		if(e.charCode=='v'.charCodeAt(0)) VisEdit.paste();
-		if(e.charCode=='s'.charCodeAt(0)) VisEdit.exportStl();
-		if(e.charCode=='y'.charCodeAt(0)) VisEdit.deselect();
+		if(e.charCode=='x'.charCodeAt(0)) VisConstructor.cut();
+		if(e.charCode=='c'.charCodeAt(0)) VisConstructor.copy();
+		if(e.charCode=='v'.charCodeAt(0)) VisConstructor.paste();
+		if(e.charCode=='s'.charCodeAt(0)) VisConstructor.exportStl();
+		if(e.charCode=='y'.charCodeAt(0)) VisConstructor.deselect();
 	},false);
 
 	this.resizeHandler=function(){
@@ -774,7 +771,7 @@ VisEdit=new function(){
 		viewer.gl.ondraw();
 	};
 	window.addEventListener("resize",this.resizeHandler,false);    
-	window.addEventListener("hashchange", function(){VisEdit.load()}, false);
+	window.addEventListener("hashchange", function(){VisConstructor.load()}, false);
 
 	this.load();
 	this.updateTreeView();
