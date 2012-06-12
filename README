@@ -1,0 +1,46 @@
+VisEdit
+
+An early experimental browser based solid modeller. 
+Runs quite well with Firefox, Chrome and Safari if WebGl is available. 
+Served at
+ 
+	http://hirnsohle.de/VisEdit/VisEdit.html 
+
+Comments appreciated.
+
+(C) Paul Geisler 2012
+
+
+Adjusting the viewpoint:
+-rotate with left mousebutton
+-scroll with shift key + left button or middle mousebutton
+-zoom with ctrl key + left button or mousewheel 
+-full touch device support yet to come
+
+All editing ist made by the righthand menu.
+-select submodels by clicking into empty space inside the tree
+-change operations and primtives by the drop down field
+-primitives:
+--cube
+--sphere
+--cylinder
+-operations:
+--transform: moves and / or rotates the contained object
+--union: unite the volume of it's both subobjects
+--subtract: subtract the volume of it's second from it's first sub object.
+--intersect: build the volume shared by both sub objects
+--multiply: apply a transform repeatedly to its sub object and unite all resulting volumes
+--the tool menu in the lower right side can be used to add primitives or wrap the selected sub object into new oprations conveniently. 
+
+General:
+-copy the selected object: press  c
+-cut / delete the selected object: press x
+-paste the copied object, replacing the selected object: press v
+-the clipboard works between several VisEdit instances in tabs or windows of your browser.
+-undo: use your browser's back button
+-save: the model is always saved to the browser's address field, so it can be bookmarked or copied to any text you like.
+-export: the model can be exported in .stl format for reuse in other tools or rapid prototyping machines by pressing s. The .stl file is then downloaded (Chrome, Chromium) or offered as web page to be saved with 'Save page as...'.  This may take some time, rendering the browser unresponsive for a while. 
+
+Credits:
+csg.js library by Evan Wallace (http://madebyevan.com/)
+
