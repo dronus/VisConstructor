@@ -163,19 +163,9 @@ CSG.prototype = {
     csg.polygons.map(function(p) { p.flip(); });
     return csg;
   },
-	 
+ 
 	transform: function(options) {
-		options = options || {};
-		var c = options.center;
-		var a = options.angle;
-		var ax= options.axis || [0, 1, 0];
-
-		var m=mat4.create();
-		mat4.identity(m);
-		// var mn=mat4.create(m); // rotation only copy for normals
-		if(c) mat4.translate(m,c,m);
-		if(a) mat4.rotate(m,a*Math.PI/180,ax,m);
-		
+		var m=CSG.getTransform(options);
 		var csg = this.clone();
 		csg.polygons.map(function(p){ 
 			p.vertices.map(function(v){
@@ -202,6 +192,23 @@ CSG.prototype = {
 		return csg;
 	}
 };
+
+CSG.getTransform= function(options){
+	
+	if(options.transform) return options.transform;		
+	var c = options.center;
+	var a = options.angle;
+	var ax= options.axis || [0, 1, 0];
+
+	var m=mat4.create();
+	mat4.identity(m);
+	// var mn=mat4.create(m); // rotation only copy for normals
+	if(c) mat4.translate(m,c,m);
+	if(a) mat4.rotate(m,a*Math.PI/180,ax,m);
+
+	return m;
+};
+
 
 CSG.empty = function(){
 	return new CSG();
