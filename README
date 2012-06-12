@@ -6,7 +6,7 @@ Served at
  
 	http://hirnsohle.de/VisEdit/VisEdit.html 
 
-Comments appreciated.
+For examples, see footer. Comments appreciated.
 
 (C) Paul Geisler 2012
 
@@ -43,4 +43,10 @@ General:
 
 Credits:
 csg.js library by Evan Wallace (http://madebyevan.com/)
+
+Examples:	
+	http://hirnsohle.de/VisConstructor/#["subtract",["subtract",["cylinder",{"radius":1,"end":[0,0.3,0]}],["transform",["sphere",{"radius":1}],{"center":[0,0.9,0]}]],["transform",["union",["cylinder",{"radius":0.1,"end":[1,0,0]}],["cylinder",{"radius":0.1,"end":[0,0,1]}]],{"center":[0,0.3,0]}]]
+	http://hirnsohle.de/VisConstructor/#["union",["subtract",["cylinder",{"l":0.2,"radius":1,"conical":0}],["cylinder",{"l":0.2,"radius":0.3,"conical":0}]],["multiply",["transform",["cube",{"radius":[0.2,0.1,0.2]}],{"center":[1,0,0],"angle":45,"axis":[0,1,0]}],{"count":36,"center":[0,0,0],"angle":10,"axis":[0,1,0]}]]
+	http://hirnsohle.de/VisConstructor/#["transform",["subtract",["transform",["cube",{"radius":[0.6,0.05,0.38]}],{"center":[0.6,0,0.38],"angle":0,"axis":[0,1,0]}],["multiply",["multiply",["multiply",["subtract",["cube",{"radius":[0.1,0.1,0.1]}],["multiply",["transform",["cube",{"radius":[0.03,0.1,0.1]}],{"center":[0.1,0,0],"angle":0,"axis":[0,1,0]}],{"count":6,"center":[0,0,0],"angle":60,"axis":[0,1,0]}]],{"count":8,"center":[0.16,0,0],"angle":0,"axis":[0,1,0]}],{"count":2,"center":[0.08,0,0.144],"angle":0,"axis":[0,1,0]}],{"count":3,"center":[0,0,0.288],"angle":0,"axis":[0,1,0]}]],{"center":[-0.6,0,-0.3],"angle":0,"axis":[0,1,0]}]
+	http://hirnsohle.de/VisConstructor/#["union",["transform",["cylinder",{"radius":0.1,"end":[0.3,1,0]}],{"center":[-0.3,0,0],"angle":0,"axis":[0,1,0]}],["union",["intersect",["sphere",{"radius":1.1}],["transform",["sphere",{"radius":1.3}],{"center":[0,2.2,0],"angle":0,"axis":[0,1,0]}]],["multiply",["transform",["subtract",["intersect",["transform",["sphere",{"radius":1.3}],{"center":[0.5,0,0],"angle":0,"axis":[0,1,0]}],["transform",["sphere",{"radius":1.3}],{"center":[-0.5,0,0],"angle":0,"axis":[0,1,0]}]],["transform",["sphere",{"radius":2}],{"center":[0,-0.9,0],"angle":0,"axis":[0,1,0]}]],{"center":[0,0,0.9],"angle":7,"axis":[0,1,0]}],{"count":10,"center":[0,0,0],"angle":36,"axis":[0,1,0]}]]]
 
