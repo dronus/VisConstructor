@@ -587,8 +587,10 @@ VisConstructor=new function(){
 	}
 
 	this.getSubtree=function(path){
+		if(!path) return null;
 		if(path=='root') return this.sceneTree;
 		var parent=this.getParent(path);
+		if(!parent) return this.sceneTree;
 		var sub=this.getSubtree(parent);
 		var base=this.getBase(path);
 		return sub[base];
