@@ -192,27 +192,26 @@ CSG.prototype.setColor = function(r, g, b) {
 
 // Convert from CSG solid to GL.Mesh object
 CSG.prototype.toMesh = function() {
-  var mesh = new GL.Mesh({ normals: true, colors: true });
-  var indexer = new GL.Indexer();
-  this.toPolygons().map(function(polygon) {
-    var indices = polygon.vertices.map(function(vertex) {
-      vertex.color = polygon.shared || [1, 1, 1];
-//      vertex.normal=polygon.plane.normal.clone();
-      return indexer.add(vertex);
-    });
-    for (var i = 2; i < indices.length; i++) {
-      mesh.triangles.push([indices[0], indices[i - 1], indices[i]]);
-    }
-  });
-  mesh.vertices = indexer.unique.map(function(v) { return [v.pos.x, v.pos.y, v.pos.z]; });
-  mesh.normals = indexer.unique.map(function(v) { return [v.normal.x, v.normal.y, v.normal.z]; });
-  mesh.colors = indexer.unique.map(function(v) { return v.color; });
-  mesh.computeWireframe();
-  console.log("Mesh triangles: "+mesh.triangles.length);
-  return mesh;
+
+	var mesh = new GL.Mesh({ normals: true, colors: true });
+	var indexer = new GL.Indexer();
+	this.toPolygons().map(function(polygon) {
+		var indices = polygon.vertices.map(function(vertex) {
+			vertex.color = polygon.shared || [1, 1, 1];
+			return indexer.add(vertex);
+		});
+		for (var i = 2; i < indices.length; i++) {
+			mesh.triangles.push([indices[0], indices[i - 1], indices[i]]);
+		}
+	});
+	mesh.vertices = indexer.unique.map(function(v) { return [v.pos.x, v.pos.y, v.pos.z]; });
+	mesh.normals = indexer.unique.map(function(v) { return [v.normal.x, v.normal.y, v.normal.z]; });
+	mesh.colors = indexer.unique.map(function(v) { return v.color; });
+	//  mesh.computeWireframe();
+	mesh.compile();
+	console.log("Mesh triangles: "+mesh.triangles.length);
+	return mesh;
 };
-
-
 
 Viewer=function(csg, width, height) {
 
@@ -355,18 +354,17 @@ VisConstructor=new function(){
 	viewer = new Viewer(new CSG(), 400, 400);
 	document.getElementById('view').appendChild(viewer.gl.canvas);
 
-	this.getCsg=function(node,path){
-
-		if(!path) path='VisConstructor.sceneTree';
-	
-		if(!Array.isArray(node))
-			return node;
+	this.getCsg=function(path){
 
 		if(this.csgCache[path]) return this.csgCache[path];
 
+		var node=this.getSubtree(path);
+		if(!Array.isArray(node))
+			return node;
+
 		var args=[];
 		for(var i=2; i<node.length; i++)
-			args.push(this.getCsg(node[i],path+'[\''+i+'\']'));
+			args.push(this.getCsg(path+'/'+i));
 
 		var csg=CSG[node[1]].apply(CSG, args);
 		this.csgCache[path]=csg;
@@ -492,7 +490,7 @@ VisConstructor=new function(){
 		var view=document.getElementById('treeview');
 		while(view.firstChild) 
 			view.removeChild(view.firstChild);
-		this.updateNodeView(view, this.sceneTree,'VisConstructor.sceneTree');
+		this.updateNodeView(view, this.sceneTree,'root');
 	}
 
 	this.updateNodeView=function(parentview, value, path){
@@ -508,7 +506,7 @@ VisConstructor=new function(){
 		nodeview.id=path;
 		nodeview.addEventListener('click',this.selectHandler,false);
 		for(var i=0; i<value.length; i++)
-			this.updateNodeView(nodeview, value[i], path+'[\''+i+'\']'); 
+			this.updateNodeView(nodeview, value[i], path+'/'+i); 
 	}
 
 	this.selectHandler=function(e){
@@ -571,27 +569,25 @@ VisConstructor=new function(){
 		}
 	}
 
-	this.getSelectedTree=function(){
+	this.getSelectedTree=function(){getSubtree
 		if(!this.selectedPath) return null;
 		return this.getSubtree(this.selectedPath);
 	}
 
 	this.getParent=function(path){
-		var index=path.lastIndexOf('[');
+		var index=path.lastIndexOf('/');
 		if(index<0) return '';
 		return path.substring(0,index);
 	}
 	this.getBase=function(path){
-		var start=path.lastIndexOf('[');
-		var end  =path.lastIndexOf(']');
+		var start=path.lastIndexOf('/');
 		if(start<0) return '';
-		return path.substring(start+2,end-1);
+		return path.substring(start+1);
 	}
 
 	this.getSubtree=function(path){
-		if(!path) return null;
+		if(path=='root') return this.sceneTree;
 		var parent=this.getParent(path);
-		if(!parent) return this.sceneTree;
 		var sub=this.getSubtree(parent);
 		var base=this.getBase(path);
 		return sub[base];
@@ -649,7 +645,7 @@ VisConstructor=new function(){
 	}
 
 	this.exportStl=function(){
-		var csg=this.getCsg(this.sceneTree);
+		var csg=this.getCsg('root');
 		csg=this.simpleManifold(csg);
 		viewer.mesh=csg.toMesh();
 		var polys=csg.polygons;
@@ -713,6 +709,22 @@ VisConstructor=new function(){
 		
 	}*/
 
+	this.getMesh=function(path){
+		var csg=this.getCsg(path);
+		if(csg.mesh) return csg.mesh;
+
+		var parent=this.getParent(path);
+		if(parent){
+			var transform=this.mergeTransforms(parent);				
+			csg=csg.transform({'transform': transform});
+			csg.setColor(0,.5,0);
+		}
+
+		var mesh=csg.toMesh();
+		this.csgCache[path].mesh=mesh;
+		return mesh;
+	}
+
 	this.updateManipulator=function(){
 		/*
 		var manipulatorMesh = new GL.Mesh({lines:true});
@@ -728,15 +740,7 @@ VisConstructor=new function(){
 		manipulatorMesh.compile();*/
 		//var pos=[0,0,0];
 		//if(selectedTree[1]['center']) pos=selectedTree[1]['center'];
-		var selectedTree=this.getSelectedTree();
-		var csg=this.getCsg(selectedTree,this.selectedPath);
-		if(this.getParent(this.selectedPath)){
-			var transform=this.mergeTransforms(this.getParent(this.selectedPath));				
-			csg=csg.transform({'transform': transform});
-			csg.setColor(0,.5,0);
-		}
-		var selectedMesh=csg.toMesh();
-		
+		var selectedMesh=this.getMesh(this.selectedPath);
 		//var csg=getManipulator(selectedTree);
 		//var manipulatorMesh=csg.toMesh();
 		var manipulatorDraw=function(viewer, gl){
@@ -809,7 +813,7 @@ VisConstructor=new function(){
 		else
 			viewer.ondraws=[];
 
-		viewer.mesh = this.getCsg(this.sceneTree).toMesh();
+		viewer.mesh = this.getMesh('root');
 		viewer.gl.ondraw();
 	}
 
@@ -820,11 +824,11 @@ VisConstructor=new function(){
 		if(Array.isArray(value)){
 			nodeview.className='array';
 			for(var i=0; i<value.length; i++)
-				this.updateObjectView(nodeview, '', value[i], path+'['+i+']');	
+				this.updateObjectView(nodeview, '', value[i], path+'/'+i);	
 		}else if(typeof value=='object'){
 			nodeview.className='object';
 			for(var key2 in value)
-				this.updateObjectView(nodeview, key2, value[key2], path+'[\''+key2+'\']');	
+				this.updateObjectView(nodeview, key2, value[key2], path+'/'+key2);	
 		}else{
 			if(parentview.className.indexOf('node')>-1 && this.getBase(path)=='1'){
 				nodeview.innerHTML=this.getOperatorSelect(path,value);
