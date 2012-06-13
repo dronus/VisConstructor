@@ -776,7 +776,6 @@ VisConstructor=new function(){
 		if(document.location.hash){
 			this.sceneTree=JSON.parse(document.location.hash.substring(1));
 			if(this.nodeTemplates[this.sceneTree[0]]) {
-				alert('Legacy model loaded. Please replace your saved model by this updated one!');
 				this.convertLegacy(this.sceneTree);
 			}
 			this.csgCache={};
