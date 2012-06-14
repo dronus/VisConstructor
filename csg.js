@@ -790,6 +790,6 @@ CSG.Node.prototype = {
 CSG.union     =function(a,b){return a.union(b);}
 CSG.subtract  =function(a,b){return a.subtract(b);}
 CSG.intersect =function(a,b){return a.intersect(b);}
-CSG.transform =function(a,options){return a.transform(options);}
-CSG.multiply  =function(a,options){return a.multiply(options);}
+CSG.transform =function(options,a){return a.transform(options);}
+CSG.multiply  =function(options,a){return a.multiply(options);}
 
