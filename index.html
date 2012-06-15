@@ -56,7 +56,7 @@
 		border-top: 3px solid #fff;
 		font-size:13px;
 		padding: 10px;
-		line-height: 14px;
+		line-height: 18px;
 	}
 	.menuPane a{
 		color:#fff;
@@ -85,7 +85,12 @@
 		background-color: #030;
 		border-color: #fff;
 	}
+	.tree .node.selected>div:first-child{
+		background-color: #fff;
+	}
+
 	.tree .node{
+		padding-top:0px;
 		margin-bottom: 4px;
 		border: 1px solid #090;
 		border-left: 4px solid #090;
@@ -97,21 +102,38 @@
 	.tree .array .value input{
 		width: 45px;
 	}
+	.tree .node>div:first-child{
+		padding:0px;
+		padding-right:3px;
+		margin: 0px;
+		margin-left: -2px;
+		background-color: #090;
+	}
+	.tree .node>div:first-child>input{
+		width: 100%;
+	}
+	.menuPane input:first-child{
+		width: 200px;
+	}
+
+
 </style>
 
 <body >
 		<div class=treePane><div class=tree id="treeview"></div></div>
 		<div class=menuPane>
+			select <input onkeyup="VisConstructor.search(this.value)">
+			<br>
 			<a href="javascript:VisConstructor.cut()">cut (x)</a>
 			<a href="javascript:VisConstructor.copy()">copy (c)</a>
 			<a href="javascript:VisConstructor.paste()">paste (v)</a>
-			<br><br>
+			<br>
 			<a href="javascript:VisConstructor.wrap('transform')">transform</a>
 			<a href="javascript:VisConstructor.wrap('union')">unite</a>
 			<a href="javascript:VisConstructor.wrap('subtract')">subtract</a>
 			<a href="javascript:VisConstructor.wrap('intersect')">intersect</a>
 			<a href="javascript:VisConstructor.wrap('multiply')">multiply</a>
-			<br><br>
+			<br>
 			add:
 			<a href="javascript:VisConstructor.add('cube')">cube</a>
 			<a href="javascript:VisConstructor.add('cylinder')">cylinder</a>
@@ -160,9 +182,6 @@ HTMLElement.prototype.removeClass=function(className){
 clone=function(object){
 	return JSON.parse(JSON.stringify(object));
 }
-
-
-
 
 // Set the color of all polygons in this solid
 CSG.prototype.setColor = function(r, g, b) {
@@ -346,28 +365,28 @@ VisConstructor=new function(){
 		if(this.csgCache[path]) return this.csgCache[path];
 
 		var args=[];
-		for(var i=1; i<node.length; i++)
+		for(var i=2; i<node.length; i++)
 			args.push(this.getCsg(node[i],path+'[\''+i+'\']'));
 
-		var csg=CSG[node[0]].apply(CSG, args);
+		var csg=CSG[node[1]].apply(CSG, args);
 		this.csgCache[path]=csg;
 
 		return csg;
 	}
 
 	this.nodeTemplates={
-		'empty':['empty'],
-		'transform':['transform',['empty'],{center:[0,0,0], angle:0, axis:[0,1,0]}],
-		'union':      ['union',['empty'],['empty']],
-		'subtract': ['subtract',['empty'],['empty']],
-		'intersect':  ['intersect',['empty'],['empty']],
-		'multiply': ['multiply',['empty'],{count: 2, center:[0,0,0], angle:0, axis:[0,1,0]}],
-		'sphere'  :['sphere'  ,{radius: 1.3}],
-		'cube'    :['cube'    ,{radius: [1,1,1]}],
-		'cylinder':['cylinder',{l:1 , radius: 1, conical: 0}]
+		'empty':['','empty'],
+		'transform':['','transform',['','empty'],{center:[0,0,0], angle:0, axis:[0,1,0]}],
+		'union':      ['','union',['','empty'],['','empty']],
+		'subtract': ['','subtract',['','empty'],['','empty']],
+		'intersect':  ['','intersect',['','empty'],['','empty']],
+		'multiply': ['','multiply',['','empty'],{count: 2, center:[0,0,0], angle:0, axis:[0,1,0]}],
+		'sphere'  :['','sphere'  ,{radius: 1.3}],
+		'cube'    :['','cube'    ,{radius: [1,1,1]}],
+		'cylinder':['','cylinder',{l:1 , radius: 1, conical: 0}]
 	}
 	
-	this.sceneTree=['subtract', this.nodeTemplates['cube'], this.nodeTemplates['sphere']];
+	this.sceneTree=['Unnamed','subtract', this.nodeTemplates['cube'], this.nodeTemplates['sphere']];
 
 	this.wrap=function(opType){
 		if(!this.selectedPath) return;
@@ -376,16 +395,16 @@ VisConstructor=new function(){
 
 		var node=clone(this.nodeTemplates[opType]);
 		var toWrap=this.getSelectedTree();
-		node[1]=toWrap;
+		node[2]=toWrap;
 		
 		var parent=this.getSubtree(this.getParent(this.selectedPath));
 		if(parent){
-			var slot=toWrap==parent[1] ? 1 : 2;
+			var slot=toWrap==parent[2] ? 2 : 3;
 			parent[slot]=node;
 		}else
 			this.sceneTree=node;
 
-		if(node[2]) this.selectedPath+="['2']";
+		if(node[3]) this.selectedPath+="['3']";
 		this.updateTreeView();
 		this.update();
 	}
@@ -400,16 +419,16 @@ VisConstructor=new function(){
 		this.invalidateTree(this.selectedPath);
 
 		var toWrap=this.getSelectedTree();
-		if(toWrap[0]!='empty'){
+		if(toWrap[1]!='empty'){
 			var union=clone(this.nodeTemplates['union']);
-			union[1]=toWrap;
-			union[2]=node;
+			union[2]=toWrap;
+			union[3]=node;
 			node=union;
-			this.selectedPath+="['2']";
+			this.selectedPath+="['3']";
 		}
 
 		if(parent){
-			var slot=toWrap==parent[1] ? 1 : 2;
+			var slot=toWrap==parent[2] ? 2 : 3;
 			parent[slot]=node;
 		}else
 			this.sceneTree=node;
@@ -430,23 +449,43 @@ VisConstructor=new function(){
 		return '<input id="'+path+'" onchange="VisConstructor.changeValue(this);" value="'+value+'">';
 	}
 
+	// check wether the given path denotes a node.
+	// this is true if all nodes from the given one up to root are arrays.
+	this.isNode=function(path){
+		do{
+			if(!Array.isArray(this.getSubtree(path))) return false;
+			path=this.getParent(path);
+		}while(path);
+		
+		return true;
+	}
+
+	this.set=function(path, value){
+		var parent=this.getParent(path);
+		var key   =this.getBase  (path);
+		if(parent) this.getSubtree(parent)[key]=value;
+		else       this.sceneTree              =value;
+
+		this.invalidate(path);
+		if(this.isNode(path)) {
+			this.updateTreeView();
+			this.invalidateTree(path);
+		}
+		this.update();
+	}
+
 	this.changeNodeType=function(selectElement){
-		var path=selectElement.id;
+		var path=this.getParent(selectElement.id); // path to this selector's node.
 		var value=selectElement.value;
 	 	var node=clone(this.nodeTemplates[value]);
-		node[0]=value;
-		eval(path+'=node;');
-		this.updateTreeView();
-		this.invalidateTree(path);
-		this.update();
+
+		this.set(path, node);		
 	}
 
 	this.changeValue=function(editElement){
 		var path=editElement.id;
 		var value=editElement.value;
-	 	eval(path+'='+value);
-		this.invalidate(path);
-		this.update();
+		this.set(path, value);
 	}
 
 	this.updateTreeView=function(){
@@ -466,10 +505,9 @@ VisConstructor=new function(){
 		var nodeview=document.createElement('div');
 		parentview.appendChild(nodeview);
 		nodeview.className='node'+(path==this.selectedPath ? ' selected' : '' );
-		nodeview.innerHTML=this.getOperatorSelect(path,value[0]);
 		nodeview.id=path;
 		nodeview.addEventListener('click',this.selectHandler,false);
-		for(var i=1; i<value.length; i++)
+		for(var i=0; i<value.length; i++)
 			this.updateNodeView(nodeview, value[i], path+'[\''+i+'\']'); 
 	}
 
@@ -495,6 +533,19 @@ VisConstructor=new function(){
 		this.update();
 	}
 
+	this.search=function(name){
+		var nodes=document.querySelectorAll('.node');
+		for (var i=0; i<nodes.length; i++){
+			var nameField=nodes[i].querySelector('input');
+			if(nameField.value.indexOf(name)>-1){
+				this.selectedPath=nodes[i].id;
+				this.updateTreeView();
+				this.update();
+				break;
+			}		
+		}
+	}
+
 	this.copy=function(){
 		setCookie('clipboard', JSON.stringify(this.getSelectedTree()));
 	}
@@ -502,7 +553,7 @@ VisConstructor=new function(){
 		this.copy();
 		var selected=this.getSelectedTree();
 		selected.length=0;
-		selected.push('empty');
+		selected.push('','empty');
 		this.updateTreeView();	
 		this.invalidateTree(this.selectedPath);
 		this.update();	
@@ -630,22 +681,37 @@ VisConstructor=new function(){
 	}
 
 	this.mergeTransforms=function(path){
-		var c=[0,0,0];
+		
 		var parent=this.getParent(path);
-		if(parent){
-			var pc=this.mergeTransforms(parent);
-			c[0]+=pc[0]; c[1]+=pc[1]; c[2]+=pc[2];
-
-			var parentTree=this.getSubtree(parent);	
-			if(parentTree[0]=='transform'){
-				var pc=parentTree[2].center;
-				c[0]+=pc[0]; c[1]+=pc[1]; c[2]+=pc[2];
-			}
+		if(parent)
+			var m=this.mergeTransforms(parent);
+		else{
+			var m=mat4.create();
+			mat4.identity(m);
 		}
 
-		return c;
+		var node=this.getSubtree(path);	
+		if(node[1]=='transform'){
+			var m2=CSG.getTransform(node[3]);
+			mat4.multiply(m,m2,m);
+		}
+
+		return m;
 	}
 
+/*
+	this.manipulators={
+		'sphere': function(node, csg){
+			var r=node[2]['radius'];
+			var ring=CSG.cylinder({l:r/20, radius: r});
+			return ring.subtract(csg);
+			
+		}
+	};
+
+	this.getManipulator(node){
+		
+	}*/
 
 	this.updateManipulator=function(){
 		/*
@@ -663,19 +729,24 @@ VisConstructor=new function(){
 		//var pos=[0,0,0];
 		//if(selectedTree[1]['center']) pos=selectedTree[1]['center'];
 		var selectedTree=this.getSelectedTree();
-		var transform=this.mergeTransforms(this.selectedPath);
 		var csg=this.getCsg(selectedTree,this.selectedPath);
-		csg=csg.transform({center: transform});
-		csg.setColor(0,.5,0);
+		if(this.getParent(this.selectedPath)){
+			var transform=this.mergeTransforms(this.getParent(this.selectedPath));				
+			csg=csg.transform({'transform': transform});
+			csg.setColor(0,.5,0);
+		}
 		var selectedMesh=csg.toMesh();
-		var manipulator=function(viewer, gl){
+		
+		//var csg=getManipulator(selectedTree);
+		//var manipulatorMesh=csg.toMesh();
+		var manipulatorDraw=function(viewer, gl){
 			viewer.lightingShader.uniforms({alpha: [.5]}).draw(selectedMesh, gl.TRIANGLES);
 			//gl.pushMatrix();
 			//gl.translate(pos[0],pos[1],pos[2]);
 			//viewer.blackShader.draw(manipulatorMesh, gl.LINES);
 			//gl.popMatrix();
 		}
-		viewer.ondraws=[manipulator];
+		viewer.ondraws=[manipulatorDraw];
 	}
 
 
@@ -688,6 +759,14 @@ VisConstructor=new function(){
 		}
 	}
 
+	
+	this.convertLegacy=function(node){
+		if(!Array.isArray(node)) return;
+		node.unshift('');
+		for(var i=2; i<node.length; i++)
+			this.convertLegacy(node[i]);
+	}
+
 	this.load=function()
 	{
 		if(this.justSaved) {
@@ -696,7 +775,11 @@ VisConstructor=new function(){
 		}
 		if(document.location.hash){
 			this.sceneTree=JSON.parse(document.location.hash.substring(1));
-			this.csgCache={};		
+			if(this.nodeTemplates[this.sceneTree[0]]) {
+				alert('Legacy model loaded. Please replace your saved model by this updated one!');
+				this.convertLegacy(this.sceneTree);
+			}
+			this.csgCache={};
 		}
 		this.updateTreeView();
 		this.update();
@@ -744,18 +827,24 @@ VisConstructor=new function(){
 			for(var key2 in value)
 				this.updateObjectView(nodeview, key2, value[key2], path+'[\''+key2+'\']');	
 		}else{
-			nodeview.className='value';
-			nodeview.innerHTML=key+" "+this.getEdit(path, value);
+			if(parentview.className.indexOf('node')>-1 && this.getBase(path)=='1'){
+				nodeview.innerHTML=this.getOperatorSelect(path,value);
+			}else{
+				nodeview.className='value';
+				nodeview.innerHTML=key+" "+this.getEdit(path, value);
+			}
 		}
 	}
 
-	window.addEventListener('keypress', function(e){
+	this.keylistener=function(e){
+		if(e.target.tagName=='INPUT') return;
 		if(e.charCode=='x'.charCodeAt(0)) VisConstructor.cut();
 		if(e.charCode=='c'.charCodeAt(0)) VisConstructor.copy();
 		if(e.charCode=='v'.charCodeAt(0)) VisConstructor.paste();
 		if(e.charCode=='s'.charCodeAt(0)) VisConstructor.exportStl();
 		if(e.charCode=='y'.charCodeAt(0)) VisConstructor.deselect();
-	},false);
+	};
+	window.addEventListener('keypress', this.keylistener ,false);
 
 	this.resizeHandler=function(){
 		var canvas=viewer.gl.canvas;
