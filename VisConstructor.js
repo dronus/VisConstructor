@@ -35,23 +35,13 @@ if(HTMLElement){
 	}
 }*/
 
-clone=function(object){
-	return JSON.parse(JSON.stringify(object));
-}
-
-// Set the color of all polygons in this solid
-CSG.prototype.setColor = function(r, g, b) {
-  this.toPolygons().map(function(polygon) {
-    polygon.shared = [r, g, b];
-  });
-};
 
 // Convert from CSG solid to GL.Mesh object
-CSG.prototype.toMesh = function() {
+buildMesh = function(polygons) {
 
 	var mesh = new GL.Mesh({ normals: true, colors: true });
 	var indexer = new GL.Indexer();
-	this.toPolygons().map(function(polygon) {
+	polygons.map(function(polygon) {
 		var indices = polygon.vertices.map(function(vertex) {
 			vertex.color = polygon.shared || [1, 1, 1];
 			return indexer.add(vertex);
@@ -69,6 +59,9 @@ CSG.prototype.toMesh = function() {
 	return mesh;
 };
 
+clone=function(object){
+	return JSON.parse(JSON.stringify(object));
+}
 
 Viewer=function(csg, width, height) {
 
@@ -85,7 +78,7 @@ Viewer=function(csg, width, height) {
 	// Get a new WebGL canvas
 	var gl = GL.create();
 	this.gl = gl;
-	this.mesh = csg.toMesh();
+	this.mesh = buildMesh(csg.polygons);
 
 	// Set up the viewport
 	gl.canvas.width = width;
@@ -202,30 +195,17 @@ Viewer=function(csg, width, height) {
 }
 
 
+Constructor=function(){
+	
+}
+
 VisConstructor=new function(){
 
-	this.csgCache={};
+
+
 	this.selectedPath=null;
 	this.justSaved=false;
-
-
-	this.getCsg=function(path){
-
-		if(this.csgCache[path]) return this.csgCache[path];
-
-		var node=this.getSubtree(path);
-		if(!Array.isArray(node))
-			return node;
-
-		var args=[];
-		for(var i=2; i<node.length; i++)
-			args.push(this.getCsg(path+'/'+i));
-
-		var csg=CSG[node[1]].apply(CSG, args);
-		this.csgCache[path]=csg;
-
-		return csg;
-	}
+	this.csgWorker=CsgWorker;
 
 	this.nodeTemplates={
 		'empty':['','empty'],
@@ -241,6 +221,12 @@ VisConstructor=new function(){
 	
 	this.sceneTree=['Unnamed','subtract', this.nodeTemplates['cube'], this.nodeTemplates['sphere']];
 
+	this.findSlot=function(node, subnode){
+		for(var i=2; i<node.length; i++)
+			if(node[i]==subnode || subnode==null && Array.isArray(node[i]) && node[i][1]=='empty') return i;
+		return -1;
+	}
+
 	this.wrap=function(opType){
 		if(!this.selectedPath) return;
 
@@ -248,16 +234,16 @@ VisConstructor=new function(){
 
 		var node=clone(this.nodeTemplates[opType]);
 		var toWrap=this.getSelectedTree();
-		node[2]=toWrap;
+		node[this.findSlot(node,null)]=toWrap;
 		
 		var parent=this.getSubtree(this.getParent(this.selectedPath));
 		if(parent){
-			var slot=toWrap==parent[2] ? 2 : 3;
+			var slot=this.findSlot(parent,toWrap);
 			parent[slot]=node;
 		}else
 			this.sceneTree=node;
 
-		if(node[3]) this.selectedPath+="['3']";
+		if(node[3]) this.selectedPath+="/3";
 		this.updateTreeView();
 		this.update();
 	}
@@ -277,11 +263,11 @@ VisConstructor=new function(){
 			union[2]=toWrap;
 			union[3]=node;
 			node=union;
-			this.selectedPath+="['3']";
+			this.selectedPath+="/3";
 		}
 
 		if(parent){
-			var slot=toWrap==parent[2] ? 2 : 3;
+			var slot=this.findSlot(parent,toWrap);
 			parent[slot]=node;
 		}else
 			this.sceneTree=node;
@@ -374,7 +360,7 @@ VisConstructor=new function(){
 	
 			VisConstructor.selectedPath=this.id;
 			this.className+=' selected';
-			VisConstructor.update();
+			VisConstructor.updateSelected();
 		}
 		e.stopPropagation();
 	}
@@ -393,7 +379,7 @@ VisConstructor=new function(){
 			if(nameField.value.indexOf(name)>-1){
 				this.selectedPath=nodes[i].id;
 				this.updateTreeView();
-				this.update();
+				this.updateSelected();
 				break;
 			}		
 		}
@@ -424,6 +410,25 @@ VisConstructor=new function(){
 		}
 	}
 
+	this.invalidate=function(path){
+		this.csgWorker.invalidate(path);
+		// and delete all child nodes
+		var p=path;
+		do{
+			delete this.meshCache[p];
+			p=this.getParent(p);
+		}while(p);		
+	}
+
+	this.invalidateTree=function(path){
+		this.csgWorker.invalidateTree(path);
+		this.invalidate(path);
+		for(key in this.meshCache) 
+			if(key.indexOf(path)==0)
+				delete this.meshCache[key];
+	}
+
+
 	this.getSelectedTree=function(){
 		if(!this.selectedPath) return null;
 		return this.getSubtree(this.selectedPath);
@@ -450,58 +455,6 @@ VisConstructor=new function(){
 		return sub[base];
 	}
 
-	this.getVertexStl=function(v){
-		var s=10;
-		return '   vertex '+(s*v.x).toFixed(5)+' '+(-s*v.z).toFixed(5)+' '+(s*v.y).toFixed(5)+'\n';
-	}
-
-	this.simpleManifold=function(csg){
-
-		csg=csg.clone();
-
-		var polygons=csg.polygons;
-	
-		var vertexIndex={};
-		for(var i=0; i<polygons.length; i++){
-			var p=polygons[i];
-			for(var j=0; j<p.vertices.length; j++){
-				var v=p.vertices[j];
-				var key=v.pos.x+" "+v.pos.y+" "+v.pos.z;
-				vertexIndex[key]=v;
-			}
-		}
-	
-
-		var pointsAdded=[];
-		for(var i=0; i<polygons.length; i++){
-			var p=polygons[i];
-			for(var key in vertexIndex){
-				var v=vertexIndex[key];
-				var vp=v.pos;
-				var t = p.plane.normal.dot(v.pos) - p.plane.w;
-				if (t > -CSG.Plane.EPSILON && t < CSG.Plane.EPSILON){
-					for(var j=0; j<p.vertices.length; j++){
-						var p1=p.vertices[j].pos;
-						var p2=p.vertices[(j+1)%p.vertices.length].pos;
-						var dp =p2.minus(p1);
-						var dp2=vp.minus(p1);
-						var projD=dp.dot(dp2)/dp.length()/dp.length();
-						var proj =dp2.minus(dp.times(projD));
-						var d    =proj.length();
-
-						if(projD > CSG.Plane.EPSILON && projD < 1-CSG.Plane.EPSILON && d > -CSG.Plane.EPSILON && d < CSG.Plane.EPSILON){
-							p.vertices.splice(j+1, 0, v);
-							pointsAdded.push(v.pos);
-						}
-					}
-				}			
-			}
-		}
-
-		return csg;
-	}
-
-
 	this.progress=function(p){
 		var indic=document.getElementById('progress');
 		var bar  =document.getElementById('progressBar');
@@ -513,83 +466,47 @@ VisConstructor=new function(){
 		bar.style.width=(p*100)+'%';
 	}
 
-	this.exportStl=function(){
 
-		var exporter=new Worker('exportStl.js');
-		this.cancel=function(){
-			exporter.terminate();
-			document.getElementById('progress').style.width='0%';
-			//document.getElementById('progress').style.width=(p*100)+'%';
-		}
-		exporter.onmessage=function(e){
-			var bb = new BlobBuilder;
-			if(e.data.progressName){
-				document.getElementById('progressName').innerHTML=e.data.progressName;
-				VisConstructor.progress(.1);
-			}
+	this.meshCache={};
+/*
+	this.setMesh=function(args){
+		viewer.mesh=buildMesh(args[0]);
+		this.meshCache[args[1]]=viewer.mesh;
+		viewer.gl.ondraw();
+	}
 
-			if(e.data.progress) 
-				VisConstructor.progress(e.data.progress);
+	this.setSelectedMesh=function(args){
+		this.selectedMesh=buildMesh(args[0]);
+		this.meshCache[args[1]]=this.selectedMesh;
+		viewer.gl.ondraw();
+	}
+*/	
+	this.onmessage=function(event){
+		var msg=event.data;
+		var method=msg.shift();
+		this[method].apply(this,msg);
+	}
 
-			if(e.data.stl){
-				bb.append(e.data.stl);
-				var blob=bb.getBlob("text/plain;charset=utf-8");
-				var name=VisConstructor.sceneTree[0]||'unnamed';
-				saveAs(blob,name+'.stl');
-			}
-		}
-		exporter.postMessage(this.save());		
+	this.worker=new Worker('CsgWorker.js');
+	this.worker.onmessage=function(event){VisConstructor.onmessage(event);};
 
-/*		var csg=this.getCsg('root');
-		csg=this.simpleManifold(csg);
-		//viewer.mesh=csg.toMesh();
-		var polys=csg.polygons;
-		var stl='solid exported\n';
-		for(var i=0; i<polys.length; i++)
-		{
-			var poly=polys[i];
-			var n=poly.plane.normal;
-		
-			// break n-polys down to triangle fan
-			for(var j=0; j<poly.vertices.length-2; j++){
-				stl+=' facet normal '+n.x.toFixed(5)+' '+n.z.toFixed(5)+' '+n.y.toFixed(5)+'\n';
-				stl+='  outer loop\n';
-				stl+=this.getVertexStl(poly.vertices[0].pos); //fan point vertex
-				for(var k=j+1; k<j+3; k++)
-				{
-					var v=poly.vertices[k].pos;
-					stl+=this.getVertexStl(v);
-				}
-				stl+='  endloop\n';
-				stl+=' endfacet\n';
-			}
-		}	
-		stl+='endsolid exported\n';
+	this.cancel=function(){
+		this.worker.terminate();
+		this.progress(1);
+	}
 
+	this.saveStl=function(stl){
 		var bb = new BlobBuilder;
 		bb.append(stl);
 		var blob=bb.getBlob("text/plain;charset=utf-8");
-
-		saveAs(blob, "exported.stl");*/
+		var name=VisConstructor.sceneTree[0]||'unnamed';
+		saveAs(blob,name+'.stl');
 	}
 
-	this.mergeTransforms=function(path){
-		
-		var parent=this.getParent(path);
-		if(parent)
-			var m=this.mergeTransforms(parent);
-		else{
-			var m=mat4.create();
-			mat4.identity(m);
-		}
-
-		var node=this.getSubtree(path);	
-		if(node[1]=='transform'){
-			var m2=CSG.getTransform(node[3]);
-			mat4.multiply(m,m2,m);
-		}
-
-		return m;
+	this.exportStl=function(){
+		document.getElementById('progressName').innerHTML='exporting stl...';
+		this.progress(.1);
+		this.worker.postMessage(['saveStl','exportStl',this.sceneTree]);
 	}
 
 /*
@@ -606,22 +523,6 @@ VisConstructor=new function(){
 		
 	}*/
 
-	this.getMesh=function(path){
-		var csg=this.getCsg(path);
-		if(csg.mesh) return csg.mesh;
-
-		var parent=this.getParent(path);
-		if(parent){
-			var transform=this.mergeTransforms(parent);				
-			csg=csg.transform({'transform': transform});
-			csg.setColor(0,.5,0);
-		}
-
-		var mesh=csg.toMesh();
-		this.csgCache[path].mesh=mesh;
-		return mesh;
-	}
-
 	this.updateManipulator=function(){
 		/*
 		var manipulatorMesh = new GL.Mesh({lines:true});
@@ -637,11 +538,17 @@ VisConstructor=new function(){
 		manipulatorMesh.compile();*/
 		//var pos=[0,0,0];
 		//if(selectedTree[1]['center']) pos=selectedTree[1]['center'];
-		var selectedMesh=this.getMesh(this.selectedPath);
+		if(this.meshCache[this.selectedPath]) {
+			this.selectedMesh=this.meshCache[this.selectedPath];
+		}else
+			this.selectedMesh=buildMesh(this.csgWorker.getPolygons(this.sceneTree,this.selectedPath));
+		viewer.gl.ondraw();
+		//	this.worker.postMessage(['setSelectedMesh','getPolygons',this.sceneTree,this.selectedPath]);
+		//this.selectedMesh=this.getMesh(this.selectedPath);
 		//var csg=getManipulator(selectedTree);
 		//var manipulatorMesh=csg.toMesh();
 		var manipulatorDraw=function(viewer, gl){
-			viewer.lightingShader.uniforms({alpha: [.5]}).draw(selectedMesh, gl.TRIANGLES);
+			if(VisConstructor.selectedMesh) viewer.lightingShader.uniforms({alpha: [.5]}).draw(VisConstructor.selectedMesh, gl.TRIANGLES);
 			//gl.pushMatrix();
 			//gl.translate(pos[0],pos[1],pos[2]);
 			//viewer.blackShader.draw(manipulatorMesh, gl.LINES);
@@ -649,7 +556,6 @@ VisConstructor=new function(){
 		}
 		viewer.ondraws=[manipulatorDraw];
 	}
-
 
 	this.save=function()
 	{
@@ -692,33 +598,22 @@ VisConstructor=new function(){
 		this.update();
 	}
 
-	this.invalidateTree=function(path){
-		this.invalidate(path);
-		// and delete all child nodes
-		for(key in this.csgCache) 
-			if(key.indexOf(path)==0)
-				delete this.csgCache[key];			
-	}
-
-	this.invalidate=function(path){
-		// delete all upstream nodes
-		var p=path;
-		do{
-			delete this.csgCache[p];
-			p=this.getParent(p);
-		}while(p);
-	}
+	
 
 	this.update=function(){
 		this.save();
+		//this.worker.postMessage(['setMesh','getPolygons',this.sceneTree,'root']);
+		viewer.mesh=buildMesh(this.csgWorker.getPolygons(this.sceneTree,'root'));
+		this.updateSelected();
+	}
 
-		if(this.selectedPath) 
+	this.updateSelected=function(){
+		this.save();
+
+		if(this.selectedPath)
 			this.updateManipulator();
 		else
 			viewer.ondraws=[];
-		viewer.mesh = this.getMesh('root');
-
-		viewer.gl.ondraw();
 	}
 
 	this.updateObjectView=function(parentview, key, value, path){
