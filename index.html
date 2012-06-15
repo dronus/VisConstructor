@@ -213,6 +213,7 @@ CSG.prototype.toMesh = function() {
 	return mesh;
 };
 
+
 Viewer=function(csg, width, height) {
 
 	this.rotSpeed=.3;
@@ -569,7 +570,7 @@ VisConstructor=new function(){
 		}
 	}
 
-	this.getSelectedTree=function(){getSubtree
+	this.getSelectedTree=function(){
 		if(!this.selectedPath) return null;
 		return this.getSubtree(this.selectedPath);
 	}
