@@ -4,7 +4,7 @@ An early experimental browser based solid modeller.
 Runs quite well with Firefox, Chrome and Safari if WebGl is available. 
 Served at
  
-	http://hirnsohle.de/VisEdit/VisEdit.html 
+	http://hirnsohle.de/VisConstructor/ 
 
 For examples, see footer. Comments appreciated.
 
