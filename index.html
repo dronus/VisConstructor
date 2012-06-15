@@ -35,6 +35,12 @@
 		border: none;
 		width: 100px;
 	}
+	.logo{
+		position: absolute; 
+		bottom: 10px;
+		left: 10px;
+		font-size: 12px;
+	}
 	.view{
 		position: absolute; 
 		top: 0px;
@@ -74,7 +80,7 @@
 	.tree div{		
 		margin: 2px;
 		padding-left: 2px;
-		 -moz-user-select: -moz-none;
+		-moz-user-select: -moz-none;
 		-webkit-user-select: none;
 	}
 	.tree .collapsed{
@@ -87,16 +93,14 @@
 		background-color: #030;
 		border-color: #fff;
 	}
-	.tree .node.selected>div:first-child{
-		background-color: #fff;
-	}
-
 	.tree .node{
 		padding-top:0px;
 		margin-bottom: 4px;
-		border: 1px solid #090;
+		border-radius: 10px;
+		-webkit-border-radius: 10px;
+		border: 0px solid #090;
 		border-left: 4px solid #090;
-		border-right: none;
+		border-top: 4px solid #090;
 	}
 	.tree .array .value{
 		display: inline;
@@ -104,16 +108,22 @@
 	.tree .array .value input{
 		width: 45px;
 	}
+
 	.tree .node>div:first-child{
-		padding:0px;
-		padding-right:3px;
-		margin: 0px;
-		margin-left: -2px;
-		background-color: #090;
+		padding-right 10px;
 	}
 	.tree .node>div:first-child>input{
+		height: 20px;
 		width: 100%;
+		background-color: transparent;
 	}
+
+	.tree .node>div:first-child>input:focus{
+		height: 20px;
+		width: 100%;
+		background-color: #333;
+	}
+
 	.menuPane input:first-child{
 		width: 200px;
 	}
@@ -158,27 +168,27 @@
 <body >
 		<div class=treePane><div class=tree id="treeview"></div></div>
 		<div class=menuPane>
-			select <input onkeyup="VisConstructor.search(this.value)">
+			select <input onkeyup="VisConstructor.search(this.value)" title="select object by entering a name">
 			<br>
-			<a href="javascript:VisConstructor.cut()">cut (x)</a>
-			<a href="javascript:VisConstructor.copy()">copy (c)</a>
-			<a href="javascript:VisConstructor.paste()">paste (v)</a>
+			<a href="javascript:VisConstructor.cut()" title="cut this subobject to clipboard">cut (x)</a>
+			<a href="javascript:VisConstructor.copy()" title="copy this subobject to clipboard">copy (c)</a>
+			<a href="javascript:VisConstructor.paste()" title="replace selected subobject by copied one">paste (v)</a>
+			<a href="javascript:VisConstructor.export()" title="export this object as .stl file">export (s)</a>
 			<br>
-			<a href="javascript:VisConstructor.wrap('transform')">transform</a>
-			<a href="javascript:VisConstructor.wrap('union')">unite</a>
-			<a href="javascript:VisConstructor.wrap('subtract')">subtract</a>
-			<a href="javascript:VisConstructor.wrap('intersect')">intersect</a>
-			<a href="javascript:VisConstructor.wrap('multiply')">multiply</a>
+			<a href="javascript:VisConstructor.wrap('transform')" title="wrap selected subobject into a transform">transform</a>
+			<a href="javascript:VisConstructor.wrap('union')" tilte="wrap the selected subobject into an union operation">unite</a>
+			<a href="javascript:VisConstructor.wrap('subtract')" title="wrap the selected subobject into a subtract operation">subtract</a>
+			<a href="javascript:VisConstructor.wrap('intersect')" title="wrap the selected subobject into a intersect operation">intersect</a>
+			<a href="javascript:VisConstructor.wrap('multiply')" title="wrap the selected subobject into a multiply operation">multiply</a>
 			<br>
 			add:
-			<a href="javascript:VisConstructor.add('cube')">cube</a>
-			<a href="javascript:VisConstructor.add('cylinder')">cylinder</a>
-			<a href="javascript:VisConstructor.add('sphere')">sphere</a>
+			<a href="javascript:VisConstructor.add('cube')" title="add a cube to the selected subobject">cube</a>
+			<a href="javascript:VisConstructor.add('cylinder')" title="add a cylinder to the selected subobject">cylinder</a>
+			<a href="javascript:VisConstructor.add('sphere')" title="add a sphere to the selected subobject">sphere</a>
 		</div>
 		<div id=view class="view" ></div>
+		<div class=logo>Vis/Constructor - © 2012 Paul Geisler - <a href="http://hirnsohle.de/VisConstructor/">http://hirnsohle.de/VisConstructor/</a></div>
 		<div id=progress><div><div id=progressBar><span id=progressName></span></div></div><a class=cancel href='javascript:VisConstructor.cancel()'>cancel</a></div>
-
-
  <script>
 
 	HTMLElement.prototype.removeClass=function(className){
