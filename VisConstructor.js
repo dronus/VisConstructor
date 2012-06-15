@@ -276,16 +276,48 @@ VisConstructor=new function(){
 		this.update();
 	}
 
+	this.tooltips={
+		'radius': 'primitive radius',
+		'radius/0': 'cube width',
+		'radius/1': 'cube height',
+		'radius/2': 'cube length',
+		'center/0': 'movement in x direction',
+		'center/1': 'movement in y direction',
+		'center/2': 'movement in z direction',
+		'axis/0' : 'axis of rotation x coordinate',
+		'axis/1' : 'axis of rotation y coordinate',
+		'axis/2' : 'axis of rotation z coordinate',
+		'angle'  : 'angle of rotation about axis',
+		'count'  : 'number of copys this object is multiplied to',
+		'0' : 'click to enter this subobject\'s name',
+		'1' :'select operation or primitive type of this subobject',
+		'1/cube':'cube primitive',
+		'1/cylinder':'cylinder primitive',
+		'1/sphere':'sphere primitive',
+		'1/union':'union operation',
+		'1/intersect':'intersection operation',
+		'1/subtract':'subtraction operation',
+		'1/multiply':'multiplication operation',
+		'1/transform':'tranform operation',
+		'1/empty':'leave subobject empty',
+	}
+
+	this.getTooltip=function(path){
+		var base =this.getBase(path);
+		var base2=this.getBase(this.getParent(path));			
+		return this.tooltips[base2+'/'+base] || this.tooltips[base];
+	}
+
 	this.getOperatorSelect=function(path,selected){
-		var html='<select id="'+path+'" onchange="VisConstructor.changeNodeType(this);">';
+		var html='<select id="'+path+'" onchange="VisConstructor.changeNodeType(this);" title="'+this.getTooltip(path)+'">';
 		for (var op in this.nodeTemplates)
-			html+='<option value='+op+(op==selected?' selected=selected':'')+'>'+op+'</option>';
+			html+='<option value='+op+(op==selected?' selected=selected':'')+' title="'+this.getTooltip(path+'/'+op)+'">'+op+'</option>';
 		html+='</select>';
 		return html;
 	}
 
 	this.getEdit=function(path,value){
-		return '<input id="'+path+'" onchange="VisConstructor.changeValue(this);" value="'+value+'">';
+		return '<input id="'+path+'" onchange="VisConstructor.changeValue(this);" value="'+value+'" title="'+this.getTooltip(path)+'">';
 	}
 
 	// check wether the given path denotes a node.
@@ -304,7 +336,7 @@ VisConstructor=new function(){
 		var key   =this.getBase  (path);
 		if(parent) this.getSubtree(parent)[key]=value;
 		else       this.sceneTree              =value;
-
+		
 		this.invalidate(path);
 		if(this.isNode(path)) {
 			this.updateTreeView();
@@ -377,9 +409,13 @@ VisConstructor=new function(){
 		for (var i=0; i<nodes.length; i++){
 			var nameField=nodes[i].querySelector('input');
 			if(nameField.value.indexOf(name)>-1){
-				this.selectedPath=nodes[i].id;
-				this.updateTreeView();
-				this.updateSelected();
+				var select=nodes[i].id;
+				if(this.selectedPath!=select){
+					this.selectedPath=select;
+					this.updateTreeView();
+					this.updateSelected();
+				}
+				document.getElementById(this.selectedPath).scrollIntoView();
 				break;
 			}		
 		}
@@ -503,7 +539,7 @@ VisConstructor=new function(){
 		saveAs(blob,name+'.stl');
 	}
 
-	this.exportStl=function(){
+	this.export=function(){
 		document.getElementById('progressName').innerHTML='exporting stl...';
 		this.progress(.1);
 		this.worker.postMessage(['saveStl','exportStl',this.sceneTree]);
@@ -601,6 +637,7 @@ VisConstructor=new function(){
 	
 
 	this.update=function(){
+		document.title=this.sceneTree[0]+' - Vis/Constructor';
 		this.save();
 		//this.worker.postMessage(['setMesh','getPolygons',this.sceneTree,'root']);
 		viewer.mesh=buildMesh(this.csgWorker.getPolygons(this.sceneTree,'root'));
