@@ -1,203 +1,4 @@
-function getCookieValue(cookieName)
-{
- var value=null;
- if(document.cookie != "") 
- {
-  cookieName=cookieName+"=";
-  
-  var start=document.cookie.indexOf(cookieName);
-  if(start>=0) 
-  {
-   start=start+cookieName.length;
-   
-   var end=document.cookie.indexOf(";", start);
-   if(end<0) end=document.cookie.length;
-   
-   value=document.cookie.substring(start,end);
-   value=unescape(value);
-  }
- }
- return value;
-}
 
-function setCookie(cookieName,cookieValue)
-{
- var cookie=cookieName+"="+escape(cookieValue)+";";
- document.cookie=cookie;
-}
-/*
-if(HTMLElement){
-	HTMLElement.prototype.removeClass=function(className){
-		var tmp=" "+this.className+" ";
-		tmp=tmp.replace(" "+className+" "," ");
-		tmp=tmp.trim();
-		this.className=tmp;
-	}
-}*/
-
-
-// Convert from CSG solid to GL.Mesh object
-buildMesh = function(polygons) {
-
-	var mesh = new GL.Mesh({ normals: true, colors: true });
-	var indexer = new GL.Indexer();
-	polygons.map(function(polygon) {
-		var indices = polygon.vertices.map(function(vertex) {
-			vertex.color = polygon.shared || [1, 1, 1];
-			return indexer.add(vertex);
-		});
-		for (var i = 2; i < indices.length; i++) {
-			mesh.triangles.push([indices[0], indices[i - 1], indices[i]]);
-		}
-	});
-	mesh.vertices = indexer.unique.map(function(v) { return [v.pos.x, v.pos.y, v.pos.z]; });
-	mesh.normals = indexer.unique.map(function(v) { return [v.normal.x, v.normal.y, v.normal.z]; });
-	mesh.colors = indexer.unique.map(function(v) { return v.color; });
-	//  mesh.computeWireframe();
-	mesh.compile();
-	//console.log("Mesh triangles: "+mesh.triangles.length);
-	return mesh;
-};
-
-clone=function(object){
-	return JSON.parse(JSON.stringify(object));
-}
-
-Viewer=function(csg, width, height) {
-
-	this.rotSpeed=.3;
-	this.moveSpeed=.001;
-	this.zoomSpeed=.002;
-	
-	this.angleX = 20;
-	this.angleY = 20;
-	this.posX=0;
-	this.posY=0;
-	this.posZ=5;
-
-	// Get a new WebGL canvas
-	var gl = GL.create();
-	this.gl = gl;
-	this.mesh = buildMesh(csg.polygons);
-
-	// Set up the viewport
-	gl.canvas.width = width;
-	gl.canvas.height = height;
-	gl.viewport(0, 0, width, height);
-	gl.matrixMode(gl.PROJECTION);
-	gl.loadIdentity();
-	gl.perspective(45, width / height, 0.1, 100);
-	gl.matrixMode(gl.MODELVIEW);
-
-	// Set up WebGL state
-	gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-	gl.clearColor(0, 0, 0, .1);
-	gl.enable(gl.DEPTH_TEST);
-	gl.enable(gl.CULL_FACE);
-	gl.enable(gl.BLEND);
-	gl.polygonOffset(1, 1);
-
-	// Black shader for wireframe
-	this.blackShader = new GL.Shader('\
-		void main() {\
-			gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;\
-		}\
-		', '\
-		void main() {\
-			gl_FragColor = vec4(0.0, 0.0, 0.0, 0.1);\
-		}\
-	');
-
-	// Shader with diffuse and specular lighting
-	this.lightingShader = new GL.Shader('\
-		varying vec3 color;\
-		varying vec3 normal;\
-		varying vec3 light;\
-		void main() {\
-			const vec3 lightDir = vec3(1.0, 2.0, 3.0) / 3.741657386773941;\
-			light = (gl_ModelViewMatrix * vec4(lightDir, 0.0)).xyz;\
-			color = gl_Color.rgb;\
-			normal = gl_NormalMatrix * gl_Normal;\
-			gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;\
-		}\
-		', '\
-		varying vec3 color;\
-		varying vec3 normal;\
-		varying vec3 light;\
-		uniform float alpha;\
-		void main() {\
-			vec3 n = normalize(normal);\
-			float diffuse = max(0.0, dot(light, n));\
-			float specular = pow(max(0.0, -reflect(light, n).z), 32.0) * sqrt(diffuse);\
-			gl_FragColor = vec4(mix(color * (0.3 + 0.7 * diffuse), vec3(1.0), specular), alpha);\
-		}\
-	');
-
-	// Black shader for wireframe
-	this.blackShader = new GL.Shader('\
-		void main() {\
-			gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;\
-		}\
-		', '\
-		void main() {\
-			gl_FragColor = vec4(0.0, 0.0, 0.0, 0.1);\
-		}\
-	');
-
-	var that = this;
-
-	gl.onmousemove = function(e) {
-		if (e.dragging) {
-			var b=e.original.button;
-			if(b==0 && !e.shiftKey && !e.altKey && !e.ctrlKey){
-				that.angleY += e.deltaX * that.rotSpeed;
-				that.angleX += e.deltaY * that.rotSpeed;
-				that.angleX = Math.max(-90, Math.min(90, that.angleX));
-			}else if(b==1 || (b==0 && e.shiftKey &&!e.altKey && !e.ctrlKey )){
-				that.posX+=e.deltaX * that.posZ  * that.moveSpeed;
-				that.posY-=e.deltaY * that.posZ * that.moveSpeed;
-			}else if(b==0 && !e.shiftKey &&!e.altKey && e.ctrlKey ){
-				var delta=1-e.deltaY*that.zoomSpeed;
-				that.posZ*=delta;      
-			}
-			viewer.gl.ondraw();
-		}
-	};
-
-	gl.canvas.addEventListener('mousewheel',function(event){
-		var delta=1-event.wheelDelta*that.zoomSpeed;
-		that.posZ*=delta;
-		that.gl.ondraw();
-	});
-
-	this.ondraws=[];
-
-	gl.ondraw = function() {
-		gl.makeCurrent();
-
-		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-		gl.loadIdentity();
-		gl.translate(that.posX, that.posY, -that.posZ);
-		gl.rotate(that.angleX, 1, 0, 0);
-		gl.rotate(that.angleY, 0, 1, 0);
-
-		gl.enable(gl.POLYGON_OFFSET_FILL);
-		that.lightingShader.uniforms({alpha: 1.0}).draw(that.mesh, gl.TRIANGLES);
-		gl.disable(gl.POLYGON_OFFSET_FILL);
-		//gl.disable(gl.DEPTH_TEST);
-		//    that.blackShader.draw(that.mesh, gl.LINES);
-		for(var i=0; i<that.ondraws.length; i++)
-			that.ondraws[i](that, gl);
-		//gl.enable(gl.DEPTH_TEST);
-	};
-
-	gl.ondraw();
-}
-
-
-Constructor=function(){
-	
-}
 
 VisConstructor=new function(){
 
@@ -577,7 +378,7 @@ VisConstructor=new function(){
 		if(this.meshCache[this.selectedPath]) {
 			this.selectedMesh=this.meshCache[this.selectedPath];
 		}else
-			this.selectedMesh=buildMesh(this.csgWorker.getPolygons(this.sceneTree,this.selectedPath));
+			this.selectedMesh=viewer.buildMesh(this.csgWorker.getPolygons(this.sceneTree,this.selectedPath));
 		viewer.gl.ondraw();
 		//	this.worker.postMessage(['setSelectedMesh','getPolygons',this.sceneTree,this.selectedPath]);
 		//this.selectedMesh=this.getMesh(this.selectedPath);
@@ -602,7 +403,6 @@ VisConstructor=new function(){
 		}
 		return json;
 	}
-
 	
 	this.convertLegacy=function(node){
 		if(!Array.isArray(node)) return;
@@ -617,7 +417,7 @@ VisConstructor=new function(){
 			this.convertLegacy(node[i]);
 	}
 
-	this.load=function(data)
+	this.hashchange=function(data)
 	{
 		if(this.justSaved) {
 			this.justSaved=false;
@@ -628,29 +428,27 @@ VisConstructor=new function(){
 		if(data){
 			this.sceneTree=JSON.parse(data);
 			this.convertLegacy(this.sceneTree);
-			this.csgCache={};
+			this.csgWorker.csgCache={};
 		}
 		this.updateTreeView();
 		this.update();
 	}
 
 	
-
 	this.update=function(){
 		document.title=this.sceneTree[0]+' - Vis/Constructor';
 		this.save();
 		//this.worker.postMessage(['setMesh','getPolygons',this.sceneTree,'root']);
-		viewer.mesh=buildMesh(this.csgWorker.getPolygons(this.sceneTree,'root'));
+		viewer.mesh=viewer.buildMesh(this.csgWorker.getPolygons(this.sceneTree,'root'));
 		this.updateSelected();
 	}
 
 	this.updateSelected=function(){
-		this.save();
-
 		if(this.selectedPath)
 			this.updateManipulator();
 		else
 			viewer.ondraws=[];
+		viewer.gl.ondraw();
 	}
 
 	this.updateObjectView=function(parentview, key, value, path){
@@ -675,38 +473,20 @@ VisConstructor=new function(){
 		}
 	}
 
-	this.keylistener=function(e){
+	this.keypress=function(e){
 		if(e.target.tagName=='INPUT') return;
-		if(e.charCode=='x'.charCodeAt(0)) VisConstructor.cut();
-		if(e.charCode=='c'.charCodeAt(0)) VisConstructor.copy();
-		if(e.charCode=='v'.charCodeAt(0)) VisConstructor.paste();
-		if(e.charCode=='s'.charCodeAt(0)) VisConstructor.exportStl();
-		if(e.charCode=='y'.charCodeAt(0)) VisConstructor.deselect();
+		if(e.charCode=='x'.charCodeAt(0)) this.cut();
+		if(e.charCode=='c'.charCodeAt(0)) this.copy();
+		if(e.charCode=='v'.charCodeAt(0)) this.paste();
+		if(e.charCode=='y'.charCodeAt(0)) this.deselect();
 	};
-
-	this.resizeHandler=function(){
-		var canvas=viewer.gl.canvas;
-		var w=canvas.parentNode.offsetWidth;
-		var h=canvas.parentNode.offsetHeight;
-		var gl=viewer.gl;
-		gl.canvas.width=w; canvas.height=h;
-		gl.viewport(0, 0,w,h);
-		gl.matrixMode(gl.PROJECTION);
-		gl.loadIdentity();
-		gl.perspective(45, w / h, 0.1, 100);
-		gl.matrixMode(gl.MODELVIEW);
-		viewer.gl.ondraw();
-	};
-
 
 	this.attach=function(){
-		viewer = new Viewer(new CSG(), 400, 400);
-		document.getElementById('view').appendChild(viewer.gl.canvas);
-		window.addEventListener('keypress', this.keylistener ,false);
-		window.addEventListener("resize",this.resizeHandler,false);    
-		window.addEventListener("hashchange", function(){VisConstructor.load()}, false);
-		this.load();
-		this.resizeHandler();
+		viewer = new Viewer(document.getElementById('view'));
+		var visConstructor=this;
+		window.addEventListener('keypress', function(e){visConstructor.keypress(e)} ,false);
+		window.addEventListener("hashchange", function(e){visConstructor.hashchange(e)}, false);
+		this.hashchange();
 	}
 }
 
