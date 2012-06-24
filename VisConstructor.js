@@ -2,15 +2,13 @@
 
 VisConstructor=new function(){
 
-
-
 	this.selectedPath=null;
 	this.justSaved=false;
 	this.csgWorker=CsgWorker;
 
 	this.nodeTemplates={
 		'empty':['','empty'],
-		'transform':['','transform',{center:[0,0,0], angle:0, axis:[0,1,0]},['','empty']],
+		'transform':['','transform',{center:[0,0,0], angle:0, axis:[0,1,0], scale:[1,1,1]},['','empty']],
 		'union':      ['','union',['','empty'],['','empty']],
 		'subtract': ['','subtract',['','empty'],['','empty']],
 		'intersect':  ['','intersect',['','empty'],['','empty']],
@@ -487,6 +485,8 @@ VisConstructor=new function(){
 		window.addEventListener('keypress', function(e){visConstructor.keypress(e)} ,false);
 		window.addEventListener("hashchange", function(e){visConstructor.hashchange(e)}, false);
 		this.hashchange();
+		viewer.showAll();
+		
 	}
 }
 

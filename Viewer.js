@@ -100,6 +100,11 @@ Viewer=function(container) {
 		return mesh;
 	};
 
+	this.showAll=function(){
+		var sphere=this.mesh.getBoundingSphere();
+		this.posZ=sphere.radius*3;
+	}
+
 	var that = this;
 
 	gl.onmousemove = function(e) {
@@ -158,7 +163,7 @@ Viewer=function(container) {
 		gl.viewport(0, 0,w,h);
 		gl.matrixMode(gl.PROJECTION);
 		gl.loadIdentity();
-		gl.perspective(45, w / h, 0.1, 100);
+		gl.perspective(45, w / h, 0.1, 1000);
 		gl.matrixMode(gl.MODELVIEW);
 		gl.ondraw();
 	};
