@@ -322,9 +322,6 @@ VisConstructor=new function(){
 		this[method].apply(this,msg);
 	}
 
-	this.worker=new Worker('CsgWorker.js');
-	this.worker.onmessage=function(event){VisConstructor.onmessage(event);};
-
 	this.cancel=function(){
 		this.worker.terminate();
 		this.progress(1);
@@ -340,6 +337,8 @@ VisConstructor=new function(){
 
 	this.export=function(){
 		document.getElementById('progressName').innerHTML='exporting stl...';
+		this.worker=new Worker('CsgWorker.js');
+		this.worker.onmessage=function(event){VisConstructor.onmessage(event);};
 		this.progress(.1);
 		this.worker.postMessage(['saveStl','exportStl',this.sceneTree]);
 	}
