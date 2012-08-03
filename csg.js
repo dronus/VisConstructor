@@ -199,13 +199,13 @@ CSG.getTransform= function(options){
 	var c = options.center;
 	var a = options.angle;
 	var ax= options.axis || [0, 1, 0];
-
+	var s=  options.scale|| [1,1,1];
 	var m=mat4.create();
 	mat4.identity(m);
 	// var mn=mat4.create(m); // rotation only copy for normals
 	if(c) mat4.translate(m,c,m);
 	if(a) mat4.rotate(m,a*Math.PI/180,ax,m);
-
+	mat4.scale(m,s,m);
 	return m;
 };
 

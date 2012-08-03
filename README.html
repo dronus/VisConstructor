@@ -1,0 +1,70 @@
+<html>
+<pre>
+VisEdit
+
+An early experimental browser based solid modeller. 
+Runs quite well with Firefox, Chrome and Safari if WebGl is available. 
+Served at
+ 
+	<a href='http://hirnsohle.de/VisConstructor/'>http://hirnsohle.de/VisConstructor/</a>
+
+For examples, see footer. Comments appreciated.
+
+(C) Paul Geisler 2012
+
+
+Adjusting the viewpoint:
+-rotate with left mousebutton
+-scroll with shift key + left button or middle mousebutton
+-zoom with ctrl key + left button or mousewheel 
+-full touch device support yet to come
+
+All editing ist made by the righthand menu.
+-select submodels by clicking into empty space inside the tree
+-name submodels by typing into the the empty space right below their upper border
+-change operations and primtives by the drop down field
+-primitives:
+--cube
+--sphere
+--cylinder
+-operations:
+--transform: moves and / or rotates the contained object
+--union: unite the volume of it's both subobjects
+--subtract: subtract the volume of it's second from it's first sub object.
+--intersect: build the volume shared by both sub objects
+--multiply: apply a transform repeatedly to its sub object and unite all resulting volumes
+--the tool menu in the lower right side can be used to add primitives or wrap the selected sub object into new oprations conveniently. 
+
+General:
+-for keyboard commands, make sure the cursor is not placed inside a text input field.
+-copy the selected object: press  c
+-cut / delete the selected object: press x
+-paste the copied object, replacing the selected object: press v
+-the clipboard works between several VisEdit instances in tabs or windows of your browser.
+-undo: use your browser's back button
+-save: the model is always saved to the browser's address field, so it can be bookmarked or copied to any text you like.
+-export: the model can be exported in .stl format for reuse in other tools or rapid prototyping machines. 
+ The .stl file is then downloaded (Chrome, Chromium) or offered as web page to be saved with 'Save page as...'.  
+ This may take some time. 
+
+Credits:
+csg.js library by Evan Wallace (http://madebyevan.com/)
+
+Examples:	
+
+<a href='http://hirnsohle.de/VisConstructor/#["subtract",["sphere",{"radius":1.3}],["transform",["sphere",{"radius":3}],{"center":[2.2,0,0]}]]'>lens</a>
+
+<a href='http://hirnsohle.de/VisConstructor/#["ashtray","subtract",["","subtract",["","cylinder",{"radius":1,"end":[0,0.3,0]}],["pit","transform",{"center":[0,0.9,0]},["","sphere",{"radius":1}]]],["trays","transform",{"center":[0,0.3,0]},["","union",["","cylinder",{"radius":0.1,"end":[1,0,0]}],["","cylinder",{"radius":0.1,"end":[0,0,1]}]]]]'>ashtray</a>
+
+<a href='http://hirnsohle.de/VisConstructor/#["union",["subtract",["cylinder",{"l":0.2,"radius":1,"conical":0}],["cylinder",{"l":0.2,"radius":0.3,"conical":0}]],["multiply",["transform",["cube",{"radius":[0.2,0.1,0.2]}],{"center":[1,0,0],"angle":45,"axis":[0,1,0]}],{"count":36,"center":[0,0,0],"angle":10,"axis":[0,1,0]}]]'>simple gear</a>
+
+<a href='http://hirnsohle.de/VisConstructor/#["transform",["subtract",["transform",["cube",{"radius":[0.6,0.05,0.38]}],{"center":[0.6,0,0.38],"angle":0,"axis":[0,1,0]}],["multiply",["multiply",["multiply",["subtract",["cube",{"radius":[0.1,0.1,0.1]}],["multiply",["transform",["cube",{"radius":[0.03,0.1,0.1]}],{"center":[0.1,0,0],"angle":0,"axis":[0,1,0]}],{"count":6,"center":[0,0,0],"angle":60,"axis":[0,1,0]}]],{"count":8,"center":[0.16,0,0],"angle":0,"axis":[0,1,0]}],{"count":2,"center":[0.08,0,0.144],"angle":0,"axis":[0,1,0]}],{"count":3,"center":[0,0,0.288],"angle":0,"axis":[0,1,0]}]],{"center":[-0.6,0,-0.3],"angle":0,"axis":[0,1,0]}]'>hex grid</a>
+
+<a href='http://hirnsohle.de/VisConstructor/#["Flower","union",["stem","transform",["","cylinder",{"radius":0.1,"end":[0.3,1,0]}],{"center":[-0.3,0,0],"angle":0,"axis":[0,1,0]}],["flower","union",["hub","intersect",["","sphere",{"radius":1.1}],["","transform",["","sphere",{"radius":1.3}],{"center":[0,2.2,0],"angle":0,"axis":[0,1,0]}]],["petals","multiply",["petal","transform",["","subtract",["","intersect",["","transform",["","sphere",{"radius":1.3}],{"center":[0.5,0,0],"angle":0,"axis":[0,1,0]}],["","transform",["","sphere",{"radius":1.3}],{"center":[-0.5,0,0],"angle":0,"axis":[0,1,0]}]],["","transform",["","sphere",{"radius":2}],{"center":[0,-0.9,0],"angle":0,"axis":[0,1,0]}]],{"center":[0,0,0.9],"angle":7,"axis":[0,1,0]}],{"count":10,"center":[0,0,0],"angle":36,"axis":[0,1,0]}]]]'>flower (slow)</a>
+
+<a href='http://hirnsohle.de/VisConstructor/#["union",["cylinder",{"l":3,"radius":0.1,"conical":-0.08}],["transform",["union",["transform",["multiply",["cylinder",{"l":0.02,"radius":0.1,"conical":0}],{"count":5,"center":[0,0.07,0],"angle":0,"axis":[0,1,0]}],{"center":[0,0.1,0],"angle":0,"axis":[0,1,0]}],["union",["cylinder",{"l":0.08,"radius":0.2,"conical":0.05}],["transform",["cylinder",{"l":0.07,"radius":0.15,"conical":0.05}],{"center":[0,-0.15,0],"angle":0,"axis":[0,1,0]}]]],{"center":[0,0.3,0],"angle":0,"axis":[0,1,0]}]]'>tv tower</a>
+
+<a href='http://hirnsohle.de/VisConstructor/#["DNA","transform",{"center":[0,"-5",0],"angle":0,"axis":[0,1,0]},["","multiply",{"count":"20","center":[0,".5",0],"angle":"23","axis":[0,1,0]},["","union",["","transform",{"center":[0,0,0],"angle":"90","axis":[0,"0","1"]},["base pair","cylinder",{"l":1,"radius":".1","conical":0}]],["","union",["deoxyribose I","transform",{"center":[".5",0,0],"angle":"-23","axis":["1","0",0]},["","cube",{"radius":[".1",".3",".1"]}]],["deoxyribose II","transform",{"center":["-.5",0,0],"angle":"23","axis":["1","0",0]},["","cube",{"radius":[".1",".3",".1"]}]]]]]]'>simple DNA model (takes a while to load)</a>
+
+</pre>
+</html>
